@@ -1,0 +1,39 @@
+[package]
+name = "petstore"
+description = "Example based on the Swagger Pet Store OpenAPI definitions"
+version = "0.1.0"
+# Generated code requires Rust edition 2018 or newer.
+edition = "2018"
+publish = false
+
+# cargo-lambda sets panic="abort" on release builds by default. Remove this or set to
+# `panic = "abort"` for smaller binaries (lower Lambda cold start latency) without graceful panic
+# handling. Despite the Cargo warning that this is ignored due to not being in the workspace root,
+# it's actually consumed by cargo-lambda directly:
+# https://github.com/cargo-lambda/cargo-lambda/blob/a342f0b8a7c34b17cee2f4fed3cc7d3ddbd810ab/crates/cargo-lambda-metadata/src/cargo.rs#L235-L261
+# Unfortunately, there's no way to silence this cargo warning in a nested workspace manifest (see
+# https://github.com/rust-lang/cargo/issues/8264).
+[profile.release]
+panic = "unwind"
+
+[dependencies]
+anyhow = "1"
+env_logger = "0.10"
+headers = "0.4"
+lambda_runtime = "0.9"
+# NOTE: When building your own project, replace this path dependency with the latest version from
+# crates.io.
+openapi-lambda = { path = "../../openapi-lambda" }
+thiserror = "1"
+tokio = "1"
+
+[build-dependencies]
+env_logger = "0.10"
+# NOTE: When building your own project, replace this path dependency with the latest version from
+# crates.io.
+openapi-lambda-codegen = { path = "../../openapi-lambda-codegen" }
+
+[dev-dependencies]
+pretty_assertions = "1.4"
+reqwest = { version = "0.11", features = ["json"] }
+serde_json = "1"

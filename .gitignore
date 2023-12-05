@@ -1,0 +1,16 @@
+# IntelliJ
+.idea/**
+.run/**
+*.iml
+
+# Rust
+/target
+/Cargo.lock
+
+# AWS
+
+.aws-sam
+
+# Misc
+*~
+.DS_Store

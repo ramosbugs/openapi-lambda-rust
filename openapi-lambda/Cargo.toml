@@ -1,0 +1,42 @@
+[package]
+name = "openapi-lambda"
+description = "Opinionated, strongly-typed code generation for AWS Lambda from OpenAPI definitions"
+readme = "../README.md"
+
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[dependencies]
+anyhow = { version = "1" }
+async-trait = "0.1"
+aws_lambda_events = "0.13"
+backtrace = "0.3"
+base64 = { version = "0.21" }
+chrono = { version = "0.4", default-features = false, features = ["serde", "std"] }
+futures = "0.3"
+headers = "0.4"
+http = "1"
+indexmap = "2.1"
+itertools = "0.12"
+lambda_runtime = "0.9"
+log = "0.4"
+mime = "0.3"
+serde = { version = "1", features = ["rc"] }
+serde_json = "1"
+serde_path_to_error = "0.1"
+thiserror = "1"
+tokio = "1"
+urlencoding = "2.1"
+
+[dev-dependencies]
+openapi-lambda-codegen = { path = "../openapi-lambda-codegen" }
+
+# Ensure openapi-lambda and openapi-lambda-codegen are in lockstep. This is the same trick serde
+# uses (see https://github.com/serde-rs/serde/pull/2588 and
+# https://github.com/matklad/macro-dep-test).
+[target.'cfg(any())'.dependencies]
+openapi-lambda-codegen = { version = "=0.1.0", path = "../openapi-lambda-codegen" }

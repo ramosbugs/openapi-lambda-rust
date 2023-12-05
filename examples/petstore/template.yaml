@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  # Docs: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-api.html
+  PetStoreApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: petstore-api
+      StageName: prod
+      DefinitionBody:
+        # Use AWS::Include instead of `DefinitionUri` so that CloudFormation intrinsics are
+        # supported.
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: .openapi-lambda/openapi-apigw.yaml
+
+  # Docs: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html
+  PetApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: pet-api
+      Description: Swagger Pet Store API
+      Handler: bootstrap
+      CodeUri: .
+      Runtime: provided.al2023
+      # TIP: Remove to run on x86-64.
+      Architectures:
+        - arm64
+      MemorySize: 256
+      Timeout: 5
+      # See: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-specification-generated-resources-function.html#sam-specification-generated-resources-function-autopublishalias
+      AutoPublishAlias: live
+      Environment:
+        Variables:
+          RUST_BACKTRACE: "1"
+          RUST_LOG: info
+    Metadata:
+      # Required for custom runtimes like Rust. SAM invokes `make build-FUNCTION_NAME` to compile
+      # the function. The build steps are defined in this directory's Makefile.
+      BuildMethod: makefile
+
+  PetApiFunctionInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Sub "${PetApiFunction.Alias}"
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PetStoreApi}/*/*/*"
+
+  StoreApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: store-api
+      Description: Swagger Pet Store API
+      Handler: bootstrap
+      CodeUri: .
+      Runtime: provided.al2023
+      # TIP: Remove to run on x86-64.
+      Architectures:
+        - arm64
+      MemorySize: 256
+      Timeout: 5
+      AutoPublishAlias: live
+      Environment:
+        Variables:
+          RUST_BACKTRACE: "1"
+          RUST_LOG: info
+    Metadata:
+      BuildMethod: makefile
+
+  StoreApiFunctionInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Sub "${StoreApiFunction.Alias}"
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PetStoreApi}/*/*/*"
+
+  UserApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: user-api
+      Description: Swagger Pet Store API
+      Handler: bootstrap
+      CodeUri: .
+      Runtime: provided.al2023
+      # TIP: Remove to run on x86-64.
+      Architectures:
+        - arm64
+      MemorySize: 256
+      Timeout: 5
+      AutoPublishAlias: live
+      Environment:
+        Variables:
+          RUST_BACKTRACE: "1"
+          RUST_LOG: info
+    Metadata:
+      BuildMethod: makefile
+
+  UserApiFunctionInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Sub "${UserApiFunction.Alias}"
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PetStoreApi}/*/*/*"
+
+Outputs:
+  PetApigwURL:
+    Description: "API Gateway endpoint URL for Pet Store API"
+    Value: !Sub "https://${PetStoreApi}.execute-api.${AWS::Region}.amazonaws.com/prod/"

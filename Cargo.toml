@@ -1,0 +1,22 @@
+[workspace]
+members = [
+    "examples/petstore",
+    "openapi-lambda",
+    "openapi-lambda-codegen",
+    "openapi-lambda-test",
+]
+
+resolver = "2"
+
+[workspace.package]
+authors = ["David A. Ramos <ramos@cs.stanford.edu>"]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/ramosbugs/openapi-lambda"
+rust-version = "1.65.0"
+version = "0.1.0"
+
+[profile.dev.package]
+# See https://insta.rs/docs/quickstart/.
+insta.opt-level = 3
+similar.opt-level = 3

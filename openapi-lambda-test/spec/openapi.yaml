@@ -1,0 +1,91 @@
+# This test input is intended to exercise functionality such as local and cross-file references,
+# identifier string casing, and various input parameters. It is not intended to be representative
+# of best practices for designing RESTful APIs or writing OpenAPI definitions.
+openapi: 3.0.2
+info:
+  title: Integration test
+  version: 0.1.0
+tags:
+  - name: foo
+  - name: bar
+paths:
+  /foo:
+    post:
+      operationId: createFoo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+                - name
+      responses:
+        "200":
+          $ref: "#/components/responses/FooOk"
+      tags:
+        - foo
+  /foo/{foo_id}:
+    get:
+      operationId: getFoo
+      parameters:
+        - name: foo_id
+          in: path
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          $ref: "#/components/responses/FooOk"
+      tags:
+        - foo
+      # Unauthenticated endpoint.
+      security:
+        - {}
+  /bar:
+    $ref: "bar.yaml#/path"
+
+components:
+  parameters:
+    SortBy:
+      name: sortBy
+      in: query
+      schema:
+        $ref: "#/components/schemas/sort-by"
+
+  responses:
+    FooOk:
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Foo"
+
+  schemas:
+    Foo:
+      type: object
+      properties:
+        foo_id:
+          type: string
+        # Identifier should be `r#type` to avoid Rust keyword.
+        type:
+          type: string
+        # Option<String>
+        description:
+          type: string
+      required:
+        - foo_id
+        - type
+
+    # Should get converted to PascalCase.
+    sort-by:
+      type: string
+      enum:
+        - name
+        - role
+        - status
+        # Should get converted to `Self_` to avoid a Rust keyword.
+        - self

@@ -1,0 +1,11 @@
+requestBodies:
+  CreateBar:
+    required: true
+    content:
+      application/octet-stream:
+        $ref: "#/schemas/Binary"
+
+schemas:
+  Binary:
+    type: string
+    format: binary

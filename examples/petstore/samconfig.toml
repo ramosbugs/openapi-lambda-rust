@@ -1,0 +1,16 @@
+version = 0.1
+
+[default.build.parameters]
+# This's example's Cargo.toml points to local crates outside of the directory containing
+# template.yaml, so we need to build in place. This is typically not needed when all dependencies
+# are located within the root of the AWS SAM project directory (e.g., when all Cargo.toml
+# dependencies are from crates.io).
+build_in_source = true
+
+[default.deploy.parameters]
+stack_name = "openapi-lambda-petstore"
+resolve_s3 = true
+s3_prefix = "openapi-lambda-petstore"
+region = "us-west-2"
+capabilities = "CAPABILITY_IAM"
+image_repositories = []

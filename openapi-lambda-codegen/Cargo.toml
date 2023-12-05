@@ -1,0 +1,33 @@
+[package]
+name = "openapi-lambda-codegen"
+description = "Code generator for openapi-lambda crate"
+
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[dependencies]
+convert_case = "0.6"
+http = "1"
+indexmap = "2.1"
+itertools = "0.12"
+log = "0.4"
+mime = "0.3"
+openapiv3 = "2"
+prettyplease = "0.2"
+proc-macro2 = "1"
+quote = "1"
+serde = { version = "1", features = ["rc"] }
+serde_json = "1"
+serde_path_to_error = "0.1"
+serde_yaml = "0.9"
+unzip-n = "0.1"
+syn = "2"
+unicode-ident = "1"
+
+[dev-dependencies]
+openapi-lambda = { path = "../openapi-lambda" }
+pretty_assertions = "1.4"

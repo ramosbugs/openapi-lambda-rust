@@ -1,0 +1,63 @@
+---
+source: openapi-lambda-test/src/lib.rs
+expression: foo_handler_contents
+---
+#![allow(unused_imports)]
+
+use crate::foo::{Api, CreateFooResponse, GetFooResponse};
+
+use openapi_lambda::__private::anyhow;
+use openapi_lambda::__private::aws_lambda_events::encodings::Body;
+use openapi_lambda::async_trait::async_trait;
+use openapi_lambda::{
+  ApiGatewayProxyRequestContext, HeaderMap, HttpResponse, LambdaContext, StatusCode,
+};
+
+pub struct FooApiHandler {
+  // Store any handler state (e.g., DB client) here.
+  state: (),
+}
+
+impl FooApiHandler {
+  pub fn new(state: ()) -> Self {
+    Self { state }
+  }
+}
+
+#[async_trait]
+impl Api for FooApiHandler {
+  // Define a type here to represent a successfully authenticated user.
+  type AuthOk = ();
+
+  // Define an error type to capture the errors produced by your API handler methods.
+  type HandlerError = ();
+
+  // Return an error response depending on the nature of the error (e.g., 400 Bad Request for
+  // errors caused by a client sending an invalid request, or 500 Internal Server Error for
+  // internal errors such as failing to connect to a database).
+  async fn respond_to_handler_error(&self, _err: Self::HandlerError) -> HttpResponse {
+    todo!()
+  }
+
+  async fn create_foo(
+    &self,
+    request_body: crate::models::CreateFooJsonRequestBody,
+    headers: HeaderMap,
+    request_context: ApiGatewayProxyRequestContext,
+    lambda_context: LambdaContext,
+    auth_ok: Self::AuthOk,
+  ) -> Result<(CreateFooResponse, HeaderMap), Self::HandlerError> {
+    todo!()
+  }
+
+  async fn get_foo(
+    &self,
+    foo_id: String,
+    headers: HeaderMap,
+    request_context: ApiGatewayProxyRequestContext,
+    lambda_context: LambdaContext,
+  ) -> Result<(GetFooResponse, HeaderMap), Self::HandlerError> {
+    todo!()
+  }
+}
+

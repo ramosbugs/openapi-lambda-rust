@@ -1,0 +1,28 @@
+[package]
+name = "openapi-lambda-test"
+description = "Integration tests for openapi-lambda/openapi-lambda-codegen"
+version = "0.1.0"
+# Generated code requires Rust edition 2018 or newer.
+edition = "2018"
+publish = false
+
+[dependencies]
+openapi-lambda = { path = "../openapi-lambda" }
+
+anyhow = "1"
+env_logger = "0.10"
+lambda_runtime = "0.9"
+tokio = "1"
+
+[dev-dependencies]
+env_logger = "0.10"
+insta = { version = "1.34", features = ["yaml"] }
+openapiv3 = "2"
+pretty_assertions = "1.4"
+proc-macro2 = "1"
+serde_path_to_error = "0.1"
+serde_yaml = "0.9"
+
+[build-dependencies]
+env_logger = "0.10"
+openapi-lambda-codegen = { path = "../openapi-lambda-codegen" }

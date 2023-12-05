@@ -1,0 +1,1029 @@
+---
+source: openapi-lambda-test/src/lib.rs
+expression: out_rs_contents
+---
+pub mod models {
+    #![allow(unused_imports)]
+    #![allow(clippy::large_enum_variant)]
+    use openapi_lambda::__private::anyhow::{self, anyhow};
+    use openapi_lambda::__private::serde::{Deserialize, Serialize};
+    use openapi_lambda::models::chrono;
+    #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq, Hash)]
+    #[serde(crate = "openapi_lambda::__private::serde")]
+    pub enum CreateBarTypeParam {
+        #[serde(rename = "a")]
+        A,
+        B,
+        #[serde(rename = "1")]
+        __1,
+        #[serde(rename = "")]
+        EmptyString,
+    }
+    impl CreateBarTypeParam {
+        fn as_str(&self) -> &'static str {
+            match self {
+                Self::A => "a",
+                Self::B => "B",
+                Self::__1 => "1",
+                Self::EmptyString => "",
+            }
+        }
+    }
+    impl std::fmt::Display for CreateBarTypeParam {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}", self.as_str())
+        }
+    }
+    impl std::str::FromStr for CreateBarTypeParam {
+        type Err = anyhow::Error;
+        fn from_str(s: &str) -> Result<Self, Self::Err> {
+            match s {
+                "a" => Ok(Self::A),
+                "B" => Ok(Self::B),
+                "1" => Ok(Self::__1),
+                "" => Ok(Self::EmptyString),
+                _ => Err(anyhow!("invalid enum variant `{}`", s)),
+            }
+        }
+    }
+    #[derive(Clone, Debug, Deserialize, Serialize)]
+    #[serde(crate = "openapi_lambda::__private::serde")]
+    pub struct CreateFooJsonRequestBody {
+        pub name: String,
+    }
+    #[derive(Clone, Debug, Deserialize, Serialize)]
+    #[serde(crate = "openapi_lambda::__private::serde")]
+    pub struct Foo {
+        pub foo_id: String,
+        #[serde(rename = "type")]
+        pub r#type: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
+    }
+    #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq, Hash)]
+    #[serde(crate = "openapi_lambda::__private::serde")]
+    pub enum SortBy {
+        #[serde(rename = "name")]
+        Name,
+        #[serde(rename = "role")]
+        Role,
+        #[serde(rename = "status")]
+        Status,
+        #[serde(rename = "self")]
+        Self_,
+    }
+    impl SortBy {
+        fn as_str(&self) -> &'static str {
+            match self {
+                Self::Name => "name",
+                Self::Role => "role",
+                Self::Status => "status",
+                Self::Self_ => "self",
+            }
+        }
+    }
+    impl std::fmt::Display for SortBy {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}", self.as_str())
+        }
+    }
+    impl std::str::FromStr for SortBy {
+        type Err = anyhow::Error;
+        fn from_str(s: &str) -> Result<Self, Self::Err> {
+            match s {
+                "name" => Ok(Self::Name),
+                "role" => Ok(Self::Role),
+                "status" => Ok(Self::Status),
+                "self" => Ok(Self::Self_),
+                _ => Err(anyhow!("invalid enum variant `{}`", s)),
+            }
+        }
+    }
+}
+pub mod bar {
+    #![allow(clippy::too_many_arguments)]
+    #![allow(unused_imports)]
+    use openapi_lambda::{
+        ApiGatewayProxyRequestContext, EventError, HeaderMap, HeaderName,
+        http_response_to_apigw, HttpResponse, LambdaContext, LambdaEvent, Middleware,
+        Response, StatusCode,
+    };
+    use openapi_lambda::async_trait::async_trait;
+    use openapi_lambda::__private::{
+        log, panic_string, serde_json, serde_path_to_error, urlencoding,
+    };
+    use openapi_lambda::__private::aws_lambda_events::apigw::{
+        ApiGatewayProxyRequest, ApiGatewayProxyResponse,
+    };
+    use openapi_lambda::__private::aws_lambda_events::encodings::Body;
+    use openapi_lambda::__private::backtrace::Backtrace;
+    use openapi_lambda::__private::base64::{self, Engine as _};
+    use openapi_lambda::__private::encoding::to_json;
+    use openapi_lambda::__private::futures::FutureExt;
+    use openapi_lambda::__private::headers::{ContentType, Header};
+    use openapi_lambda::__private::mime::Mime;
+    use openapi_lambda::error::format_error;
+    #[allow(clippy::large_enum_variant)]
+    #[derive(Clone, Debug)]
+    #[doc = concat!(
+        "Response to [`Api::", "create_bar", "`](crate::", "bar", "::Api::",
+        "create_bar", ").",
+    )]
+    pub enum CreateBarResponse {
+        ///Successful operation
+        Ok(crate::models::Foo),
+        ///Bad request
+        BadRequest(String),
+        ///Not found
+        NotFound,
+        ///Default response
+        Default(StatusCode),
+    }
+    impl CreateBarResponse {
+        pub(crate) fn into_http_response(
+            self,
+            headers: HeaderMap,
+        ) -> Result<HttpResponse, EventError> {
+            let (status_code, content_type, body) = match self {
+                CreateBarResponse::Ok(body) => {
+                    (
+                        StatusCode::OK,
+                        Some("application/json"),
+                        Body::Text(
+                            to_json(&body)
+                                .map_err(|err| {
+                                    EventError::ToJsonResponse {
+                                        type_name: std::borrow::Cow::Borrowed("CreateBarResponse"),
+                                        source: Box::new(err),
+                                        backtrace: Backtrace::new(),
+                                    }
+                                })?,
+                        ),
+                    )
+                }
+                CreateBarResponse::BadRequest(body) => {
+                    (StatusCode::BAD_REQUEST, Some("text/plain"), Body::Text(body))
+                }
+                CreateBarResponse::NotFound => {
+                    (StatusCode::NOT_FOUND, Option::<&'static str>::None, Body::Empty)
+                }
+                CreateBarResponse::Default(status_code) => {
+                    (status_code, Option::<&'static str>::None, Body::Empty)
+                }
+            };
+            let response = Response::builder().status(status_code);
+            let response_with_content_type = if let Some(content_type) = content_type {
+                response.header(ContentType::name(), content_type.to_string())
+            } else {
+                response
+            };
+            let response_with_headers = headers
+                .iter()
+                .fold(
+                    response_with_content_type,
+                    |response, (header_name, header_value)| {
+                        response.header(header_name, header_value)
+                    },
+                );
+            response_with_headers
+                .body(body)
+                .map_err(|err| EventError::HttpResponse(Box::new(err), Backtrace::new()))
+        }
+    }
+    /// API Handler
+    ///
+    /// **This is an `#[async_trait]`.**
+    #[async_trait]
+    pub trait Api: Sized {
+        /// User-defined authenticated identity type.
+        ///
+        /// This type is returned when
+        /// [`Middleware::authenticate`](openapi_lambda::Middleware::authenticate) successfully
+        /// authenticates a request then passed as an argument to the request handler method of
+        /// this trait.
+        ///
+        /// Note that [`Middleware::authenticate`](openapi_lambda::Middleware::authenticate) is
+        /// not invoked for unauthenticated endpoints (i.e., those with
+        /// [`security: [{}]`](https://swagger.io/specification/#operation-object)),
+        /// and no `AuthOk` value is passed as an argument to the corresponding request
+        /// handler methods.
+        type AuthOk: Send;
+        /// User-defined error type (typically an `enum`).
+        type HandlerError: Send;
+        async fn respond_to_event_error(&self, err: EventError) -> HttpResponse {
+            log::error!(
+                "{}", format_error(& err, Some(& format!("EventError::{}", err.name())),
+                err.backtrace()),
+            );
+            err.into()
+        }
+        async fn respond_to_handler_error(
+            &self,
+            err: Self::HandlerError,
+        ) -> HttpResponse;
+        #[doc = concat!("Endpoint: `", "POST", " ", "/bar", "`")]
+        ///
+        #[doc = concat!("Operation ID: `", "createBar", "`")]
+        ///
+        /// # Arguments
+        ///
+        #[doc = concat!("* `", stringify!(bar_id), "` - ", "")]
+        #[doc = concat!("* `", stringify!(sort_by), "` - ", "")]
+        #[doc = concat!("* `", stringify!(r#type), "` - ", "Bar type")]
+        #[doc = concat!("* `", stringify!(x_bar), "` - ", "")]
+        #[doc = concat!("* `request_body` - ", "Request body")]
+        /// * `headers` - HTTP request headers
+        /// * `request_context` - API Gateway request context. Contains information about the AWS
+        ///   account/resources that invoked the Lambda function and Cognito identity information
+        ///   about the client (if configured for the API Gateway).
+        /// * `lambda_context` Lambda function execution context
+        /// * `auth_ok` - Output of [`Middleware::authenticate`] representing the authenticated
+        ///   user's identity
+        async fn create_bar(
+            &self,
+            bar_id: crate::types::BarId,
+            sort_by: Option<crate::models::SortBy>,
+            r#type: Option<crate::models::CreateBarTypeParam>,
+            x_bar: Option<String>,
+            request_body: Vec<u8>,
+            headers: HeaderMap,
+            request_context: ApiGatewayProxyRequestContext,
+            lambda_context: LambdaContext,
+            auth_ok: Self::AuthOk,
+        ) -> Result<(CreateBarResponse, HeaderMap), Self::HandlerError>;
+        async fn dispatch_request<M>(
+            &self,
+            event: LambdaEvent<ApiGatewayProxyRequest>,
+            middleware: &M,
+        ) -> ApiGatewayProxyResponse
+        where
+            M: Middleware<AuthOk = <Self as Api>::AuthOk> + Sync,
+        {
+            match std::panic::AssertUnwindSafe(
+                    dispatch_request_impl(self, event.payload, event.context, middleware),
+                )
+                .catch_unwind()
+                .await
+            {
+                Ok(response) => response,
+                Err(panic) => {
+                    http_response_to_apigw(
+                        self
+                            .respond_to_event_error(
+                                EventError::Panic(
+                                    panic_string(panic)
+                                        .unwrap_or_else(|err| std::panic::resume_unwind(err)),
+                                    Backtrace::new(),
+                                ),
+                            )
+                            .await,
+                    )
+                }
+            }
+        }
+    }
+    async fn handle_create_bar<A, M>(
+        api: &A,
+        request: ApiGatewayProxyRequest,
+        lambda_context: LambdaContext,
+        middleware: &M,
+    ) -> HttpResponse
+    where
+        A: Api<AuthOk = <M as Middleware>::AuthOk> + Sync,
+        M: Middleware + Sync,
+    {
+        log::info!(concat!("Handling HTTP ", "POST", " {} ({})"), "/bar", "createBar");
+        #[allow(clippy::bind_instead_of_map)]
+        let bar_id = match request
+            .query_string_parameters
+            .first("barId")
+            .map(|p| {
+                p.parse::<crate::types::BarId>()
+                    .map_err(|err| {
+                        EventError::InvalidRequestQueryParam {
+                            param_name: std::borrow::Cow::Borrowed("barId"),
+                            source: Some(err.into()),
+                            backtrace: Backtrace::new(),
+                        }
+                    })
+            })
+        {
+            Some(Ok(param_value)) => param_value,
+            Some(Err(err)) => return api.respond_to_event_error(err).await,
+            None => {
+                return api
+                    .respond_to_event_error(
+                        EventError::MissingRequestParam(
+                            std::borrow::Cow::Borrowed("barId"),
+                            Backtrace::new(),
+                        ),
+                    )
+                    .await;
+            }
+        };
+        #[allow(clippy::bind_instead_of_map)]
+        let sort_by = match request
+            .query_string_parameters
+            .first("sortBy")
+            .map(|p| {
+                p.parse::<crate::models::SortBy>()
+                    .map_err(|err| {
+                        EventError::InvalidRequestQueryParam {
+                            param_name: std::borrow::Cow::Borrowed("sortBy"),
+                            source: Some(err.into()),
+                            backtrace: Backtrace::new(),
+                        }
+                    })
+            })
+            .transpose()
+        {
+            Ok(param_value) => param_value,
+            Err(err) => return api.respond_to_event_error(err).await,
+        };
+        #[allow(clippy::bind_instead_of_map)]
+        let r#type = match request
+            .query_string_parameters
+            .first("type")
+            .map(|p| {
+                p.parse::<crate::models::CreateBarTypeParam>()
+                    .map_err(|err| {
+                        EventError::InvalidRequestQueryParam {
+                            param_name: std::borrow::Cow::Borrowed("type"),
+                            source: Some(err.into()),
+                            backtrace: Backtrace::new(),
+                        }
+                    })
+            })
+            .transpose()
+        {
+            Ok(param_value) => param_value,
+            Err(err) => return api.respond_to_event_error(err).await,
+        };
+        #[allow(clippy::bind_instead_of_map)]
+        let x_bar = match request
+            .headers
+            .get("x-bar")
+            .map(|header_value| {
+                header_value
+                    .to_str()
+                    .map(String::from)
+                    .map_err(|err| {
+                        EventError::InvalidHeaderUtf8(
+                            HeaderName::from_static("x-bar"),
+                            Box::new(err),
+                            Backtrace::new(),
+                        )
+                    })
+                    .and_then(Ok)
+            })
+            .transpose()
+        {
+            Ok(param_value) => param_value,
+            Err(err) => return api.respond_to_event_error(err).await,
+        };
+        if let Some(content_type_raw) = request.headers.get(ContentType::name().as_str())
+        {
+            let content_type = match content_type_raw.to_str() {
+                Ok(content_type) => content_type,
+                Err(err) => {
+                    return api
+                        .respond_to_event_error(
+                            EventError::InvalidHeaderUtf8(
+                                HeaderName::from_static(ContentType::name().as_str()),
+                                Box::new(err),
+                                Backtrace::new(),
+                            ),
+                        )
+                        .await;
+                }
+            };
+            if !matches!(
+                content_type.parse:: < Mime > (), Ok(content_type) if content_type
+                .essence_str() == "application/octet-stream"
+            ) {
+                return api
+                    .respond_to_event_error(
+                        EventError::UnexpectedContentType(
+                            content_type.to_owned(),
+                            Backtrace::new(),
+                        ),
+                    )
+                    .await;
+            }
+        } else {
+            return api
+                .respond_to_event_error(
+                    EventError::MissingRequestHeader(
+                        std::borrow::Cow::Borrowed(ContentType::name().as_str()),
+                        Backtrace::new(),
+                    ),
+                )
+                .await;
+        };
+        let request_body = if let Some(request_body) = if request.is_base64_encoded {
+            match request
+                .body
+                .map(|body| {
+                    base64::engine::general_purpose::STANDARD.decode(body.as_bytes())
+                })
+                .transpose()
+                .map_err(|err| EventError::InvalidBodyBase64(
+                    Box::new(err),
+                    Backtrace::new(),
+                ))
+            {
+                Ok(body) => body,
+                Err(err) => return api.respond_to_event_error(err).await,
+            }
+        } else {
+            request.body.map(String::into_bytes)
+        } {
+            request_body
+        } else {
+            return api
+                .respond_to_event_error(EventError::MissingRequestBody(Backtrace::new()))
+                .await;
+        };
+        log::trace!(concat!("Request parameter `", "barId", "`: {:#?}"), bar_id);
+        log::trace!(concat!("Request parameter `", "sortBy", "`: {:#?}"), sort_by);
+        log::trace!(concat!("Request parameter `", "type", "`: {:#?}"), r#type);
+        log::trace!(concat!("Request parameter `", "x-bar", "`: {:#?}"), x_bar);
+        log::trace!("Request body: {request_body:#?}");
+        log::trace!("Authenticating request");
+        let auth_ok = match middleware
+            .authenticate(
+                "createBar",
+                &request.headers,
+                &request.request_context,
+                &lambda_context,
+            )
+            .await
+        {
+            Ok(auth_ok) => auth_ok,
+            Err(err) => return err,
+        };
+        middleware
+            .wrap_handler_authed(
+                |headers, request_context, lambda_context, auth_ok| async move {
+                    let (response, response_headers) = match api
+                        .create_bar(
+                            bar_id,
+                            sort_by,
+                            r#type,
+                            x_bar,
+                            request_body,
+                            headers,
+                            request_context,
+                            lambda_context,
+                            auth_ok,
+                        )
+                        .await
+                    {
+                        Ok((response, response_headers)) => (response, response_headers),
+                        Err(err) => return api.respond_to_handler_error(err).await,
+                    };
+                    log::trace!("Response: {response:#?}");
+                    log::trace!("Returning response headers: {response_headers:#?}");
+                    match response.into_http_response(response_headers) {
+                        Ok(response) => response,
+                        Err(err) => api.respond_to_event_error(err).await,
+                    }
+                },
+                "createBar",
+                request.headers,
+                request.request_context,
+                lambda_context,
+                auth_ok,
+            )
+            .await
+    }
+    async fn dispatch_request_impl<A, M>(
+        api: &A,
+        request: ApiGatewayProxyRequest,
+        lambda_context: LambdaContext,
+        middleware: &M,
+    ) -> ApiGatewayProxyResponse
+    where
+        A: Api<AuthOk = <M as Middleware>::AuthOk> + Sync,
+        M: Middleware + Sync,
+    {
+        log::trace!("Request: {request:#?}");
+        log::trace!("Lambda context: {lambda_context:#?}");
+        let operation_id = if let Some(ref operation_id) = request
+            .request_context
+            .operation_name
+        {
+            operation_id
+        } else {
+            return http_response_to_apigw(
+                api
+                    .respond_to_event_error(
+                        EventError::UnexpectedOperationId(
+                            "no operation_name provided in ApiGatewayProxyRequest"
+                                .into(),
+                            Backtrace::new(),
+                        ),
+                    )
+                    .await,
+            );
+        };
+        let http_response = match operation_id.as_str() {
+            "createBar" => {
+                handle_create_bar(api, request, lambda_context, middleware).await
+            }
+            _ => {
+                api.respond_to_event_error(
+                        EventError::UnexpectedOperationId(
+                            operation_id.to_string(),
+                            Backtrace::new(),
+                        ),
+                    )
+                    .await
+            }
+        };
+        http_response_to_apigw(http_response)
+    }
+}
+pub mod foo {
+    #![allow(clippy::too_many_arguments)]
+    #![allow(unused_imports)]
+    use openapi_lambda::{
+        ApiGatewayProxyRequestContext, EventError, HeaderMap, HeaderName,
+        http_response_to_apigw, HttpResponse, LambdaContext, LambdaEvent, Middleware,
+        Response, StatusCode,
+    };
+    use openapi_lambda::async_trait::async_trait;
+    use openapi_lambda::__private::{
+        log, panic_string, serde_json, serde_path_to_error, urlencoding,
+    };
+    use openapi_lambda::__private::aws_lambda_events::apigw::{
+        ApiGatewayProxyRequest, ApiGatewayProxyResponse,
+    };
+    use openapi_lambda::__private::aws_lambda_events::encodings::Body;
+    use openapi_lambda::__private::backtrace::Backtrace;
+    use openapi_lambda::__private::base64::{self, Engine as _};
+    use openapi_lambda::__private::encoding::to_json;
+    use openapi_lambda::__private::futures::FutureExt;
+    use openapi_lambda::__private::headers::{ContentType, Header};
+    use openapi_lambda::__private::mime::Mime;
+    use openapi_lambda::error::format_error;
+    #[allow(clippy::large_enum_variant)]
+    #[derive(Clone, Debug)]
+    #[doc = concat!(
+        "Response to [`Api::", "create_foo", "`](crate::", "foo", "::Api::",
+        "create_foo", ").",
+    )]
+    pub enum CreateFooResponse {
+        ///Successful operation
+        Ok(crate::models::Foo),
+    }
+    impl CreateFooResponse {
+        pub(crate) fn into_http_response(
+            self,
+            headers: HeaderMap,
+        ) -> Result<HttpResponse, EventError> {
+            let (status_code, content_type, body) = match self {
+                CreateFooResponse::Ok(body) => {
+                    (
+                        StatusCode::OK,
+                        Some("application/json"),
+                        Body::Text(
+                            to_json(&body)
+                                .map_err(|err| {
+                                    EventError::ToJsonResponse {
+                                        type_name: std::borrow::Cow::Borrowed("CreateFooResponse"),
+                                        source: Box::new(err),
+                                        backtrace: Backtrace::new(),
+                                    }
+                                })?,
+                        ),
+                    )
+                }
+            };
+            let response = Response::builder().status(status_code);
+            let response_with_content_type = if let Some(content_type) = content_type {
+                response.header(ContentType::name(), content_type.to_string())
+            } else {
+                response
+            };
+            let response_with_headers = headers
+                .iter()
+                .fold(
+                    response_with_content_type,
+                    |response, (header_name, header_value)| {
+                        response.header(header_name, header_value)
+                    },
+                );
+            response_with_headers
+                .body(body)
+                .map_err(|err| EventError::HttpResponse(Box::new(err), Backtrace::new()))
+        }
+    }
+    #[allow(clippy::large_enum_variant)]
+    #[derive(Clone, Debug)]
+    #[doc = concat!(
+        "Response to [`Api::", "get_foo", "`](crate::", "foo", "::Api::", "get_foo",
+        ").",
+    )]
+    pub enum GetFooResponse {
+        ///Successful operation
+        Ok(crate::models::Foo),
+    }
+    impl GetFooResponse {
+        pub(crate) fn into_http_response(
+            self,
+            headers: HeaderMap,
+        ) -> Result<HttpResponse, EventError> {
+            let (status_code, content_type, body) = match self {
+                GetFooResponse::Ok(body) => {
+                    (
+                        StatusCode::OK,
+                        Some("application/json"),
+                        Body::Text(
+                            to_json(&body)
+                                .map_err(|err| {
+                                    EventError::ToJsonResponse {
+                                        type_name: std::borrow::Cow::Borrowed("GetFooResponse"),
+                                        source: Box::new(err),
+                                        backtrace: Backtrace::new(),
+                                    }
+                                })?,
+                        ),
+                    )
+                }
+            };
+            let response = Response::builder().status(status_code);
+            let response_with_content_type = if let Some(content_type) = content_type {
+                response.header(ContentType::name(), content_type.to_string())
+            } else {
+                response
+            };
+            let response_with_headers = headers
+                .iter()
+                .fold(
+                    response_with_content_type,
+                    |response, (header_name, header_value)| {
+                        response.header(header_name, header_value)
+                    },
+                );
+            response_with_headers
+                .body(body)
+                .map_err(|err| EventError::HttpResponse(Box::new(err), Backtrace::new()))
+        }
+    }
+    /// API Handler
+    ///
+    /// **This is an `#[async_trait]`.**
+    #[async_trait]
+    pub trait Api: Sized {
+        /// User-defined authenticated identity type.
+        ///
+        /// This type is returned when
+        /// [`Middleware::authenticate`](openapi_lambda::Middleware::authenticate) successfully
+        /// authenticates a request then passed as an argument to the request handler method of
+        /// this trait.
+        ///
+        /// Note that [`Middleware::authenticate`](openapi_lambda::Middleware::authenticate) is
+        /// not invoked for unauthenticated endpoints (i.e., those with
+        /// [`security: [{}]`](https://swagger.io/specification/#operation-object)),
+        /// and no `AuthOk` value is passed as an argument to the corresponding request
+        /// handler methods.
+        type AuthOk: Send;
+        /// User-defined error type (typically an `enum`).
+        type HandlerError: Send;
+        async fn respond_to_event_error(&self, err: EventError) -> HttpResponse {
+            log::error!(
+                "{}", format_error(& err, Some(& format!("EventError::{}", err.name())),
+                err.backtrace()),
+            );
+            err.into()
+        }
+        async fn respond_to_handler_error(
+            &self,
+            err: Self::HandlerError,
+        ) -> HttpResponse;
+        #[doc = concat!("Endpoint: `", "POST", " ", "/foo", "`")]
+        ///
+        #[doc = concat!("Operation ID: `", "createFoo", "`")]
+        ///
+        /// # Arguments
+        ///
+        #[doc = concat!("* `request_body` - ", "Request body")]
+        /// * `headers` - HTTP request headers
+        /// * `request_context` - API Gateway request context. Contains information about the AWS
+        ///   account/resources that invoked the Lambda function and Cognito identity information
+        ///   about the client (if configured for the API Gateway).
+        /// * `lambda_context` Lambda function execution context
+        /// * `auth_ok` - Output of [`Middleware::authenticate`] representing the authenticated
+        ///   user's identity
+        async fn create_foo(
+            &self,
+            request_body: crate::models::CreateFooJsonRequestBody,
+            headers: HeaderMap,
+            request_context: ApiGatewayProxyRequestContext,
+            lambda_context: LambdaContext,
+            auth_ok: Self::AuthOk,
+        ) -> Result<(CreateFooResponse, HeaderMap), Self::HandlerError>;
+        #[doc = concat!("Endpoint: `", "GET", " ", "/foo/{foo_id}", "`")]
+        ///
+        #[doc = concat!("Operation ID: `", "getFoo", "`")]
+        ///
+        /// # Arguments
+        ///
+        #[doc = concat!("* `", stringify!(foo_id), "` - ", "")]
+        /// * `headers` - HTTP request headers
+        /// * `request_context` - API Gateway request context. Contains information about the AWS
+        ///   account/resources that invoked the Lambda function and Cognito identity information
+        ///   about the client (if configured for the API Gateway).
+        /// * `lambda_context` Lambda function execution context
+        async fn get_foo(
+            &self,
+            foo_id: String,
+            headers: HeaderMap,
+            request_context: ApiGatewayProxyRequestContext,
+            lambda_context: LambdaContext,
+        ) -> Result<(GetFooResponse, HeaderMap), Self::HandlerError>;
+        async fn dispatch_request<M>(
+            &self,
+            event: LambdaEvent<ApiGatewayProxyRequest>,
+            middleware: &M,
+        ) -> ApiGatewayProxyResponse
+        where
+            M: Middleware<AuthOk = <Self as Api>::AuthOk> + Sync,
+        {
+            match std::panic::AssertUnwindSafe(
+                    dispatch_request_impl(self, event.payload, event.context, middleware),
+                )
+                .catch_unwind()
+                .await
+            {
+                Ok(response) => response,
+                Err(panic) => {
+                    http_response_to_apigw(
+                        self
+                            .respond_to_event_error(
+                                EventError::Panic(
+                                    panic_string(panic)
+                                        .unwrap_or_else(|err| std::panic::resume_unwind(err)),
+                                    Backtrace::new(),
+                                ),
+                            )
+                            .await,
+                    )
+                }
+            }
+        }
+    }
+    async fn handle_create_foo<A, M>(
+        api: &A,
+        request: ApiGatewayProxyRequest,
+        lambda_context: LambdaContext,
+        middleware: &M,
+    ) -> HttpResponse
+    where
+        A: Api<AuthOk = <M as Middleware>::AuthOk> + Sync,
+        M: Middleware + Sync,
+    {
+        log::info!(concat!("Handling HTTP ", "POST", " {} ({})"), "/foo", "createFoo");
+        if let Some(content_type_raw) = request.headers.get(ContentType::name().as_str())
+        {
+            let content_type = match content_type_raw.to_str() {
+                Ok(content_type) => content_type,
+                Err(err) => {
+                    return api
+                        .respond_to_event_error(
+                            EventError::InvalidHeaderUtf8(
+                                HeaderName::from_static(ContentType::name().as_str()),
+                                Box::new(err),
+                                Backtrace::new(),
+                            ),
+                        )
+                        .await;
+                }
+            };
+            if !matches!(
+                content_type.parse:: < Mime > (), Ok(content_type) if content_type
+                .essence_str() == "application/json"
+            ) {
+                return api
+                    .respond_to_event_error(
+                        EventError::UnexpectedContentType(
+                            content_type.to_owned(),
+                            Backtrace::new(),
+                        ),
+                    )
+                    .await;
+            }
+        } else {
+            return api
+                .respond_to_event_error(
+                    EventError::MissingRequestHeader(
+                        std::borrow::Cow::Borrowed(ContentType::name().as_str()),
+                        Backtrace::new(),
+                    ),
+                )
+                .await;
+        };
+        let request_body_opt = match if request.is_base64_encoded {
+            match request
+                .body
+                .map(|body| {
+                    base64::engine::general_purpose::STANDARD.decode(body.as_bytes())
+                })
+                .transpose()
+                .map_err(|err| EventError::InvalidBodyBase64(
+                    Box::new(err),
+                    Backtrace::new(),
+                ))
+            {
+                Ok(body) => body,
+                Err(err) => return api.respond_to_event_error(err).await,
+            }
+        } else {
+            request.body.map(String::into_bytes)
+        }
+            .map(|decoded_body| serde_path_to_error::deserialize::<
+                _,
+                crate::models::CreateFooJsonRequestBody,
+            >(&mut serde_json::Deserializer::from_slice(&decoded_body)))
+            .transpose()
+            .map_err(|err| EventError::InvalidBodyJson(Box::new(err), Backtrace::new()))
+        {
+            Ok(body) => body,
+            Err(err) => return api.respond_to_event_error(err).await,
+        };
+        let request_body = if let Some(request_body) = request_body_opt {
+            request_body
+        } else {
+            return api
+                .respond_to_event_error(EventError::MissingRequestBody(Backtrace::new()))
+                .await;
+        };
+        log::trace!("Request body: {request_body:#?}");
+        log::trace!("Authenticating request");
+        let auth_ok = match middleware
+            .authenticate(
+                "createFoo",
+                &request.headers,
+                &request.request_context,
+                &lambda_context,
+            )
+            .await
+        {
+            Ok(auth_ok) => auth_ok,
+            Err(err) => return err,
+        };
+        middleware
+            .wrap_handler_authed(
+                |headers, request_context, lambda_context, auth_ok| async move {
+                    let (response, response_headers) = match api
+                        .create_foo(
+                            request_body,
+                            headers,
+                            request_context,
+                            lambda_context,
+                            auth_ok,
+                        )
+                        .await
+                    {
+                        Ok((response, response_headers)) => (response, response_headers),
+                        Err(err) => return api.respond_to_handler_error(err).await,
+                    };
+                    log::trace!("Response: {response:#?}");
+                    log::trace!("Returning response headers: {response_headers:#?}");
+                    match response.into_http_response(response_headers) {
+                        Ok(response) => response,
+                        Err(err) => api.respond_to_event_error(err).await,
+                    }
+                },
+                "createFoo",
+                request.headers,
+                request.request_context,
+                lambda_context,
+                auth_ok,
+            )
+            .await
+    }
+    async fn handle_get_foo<A, M>(
+        api: &A,
+        request: ApiGatewayProxyRequest,
+        lambda_context: LambdaContext,
+        middleware: &M,
+    ) -> HttpResponse
+    where
+        A: Api<AuthOk = <M as Middleware>::AuthOk> + Sync,
+        M: Middleware + Sync,
+    {
+        log::info!(
+            concat!("Handling HTTP ", "GET", " {} ({})"), "/foo/{foo_id}", "getFoo"
+        );
+        #[allow(clippy::bind_instead_of_map)]
+        let foo_id = match if let Some(param_value) = request
+            .path_parameters
+            .get("foo_id")
+        {
+            match urlencoding::decode(param_value) {
+                Ok(decoded_param_value) => {
+                    Some(decoded_param_value).map(|p| Ok(p.to_string()))
+                }
+                Err(err) => {
+                    return api
+                        .respond_to_event_error(EventError::InvalidRequestPathParam {
+                            param_name: std::borrow::Cow::Borrowed("foo_id"),
+                            source: Some(err.into()),
+                            backtrace: Backtrace::new(),
+                        })
+                        .await;
+                }
+            }
+        } else {
+            None
+        } {
+            Some(Ok(param_value)) => param_value,
+            Some(Err(err)) => return api.respond_to_event_error(err).await,
+            None => {
+                return api
+                    .respond_to_event_error(
+                        EventError::MissingRequestParam(
+                            std::borrow::Cow::Borrowed("foo_id"),
+                            Backtrace::new(),
+                        ),
+                    )
+                    .await;
+            }
+        };
+        log::trace!(concat!("Request parameter `", "foo_id", "`: {:#?}"), foo_id);
+        log::debug!("Request does not require authentication");
+        middleware
+            .wrap_handler_unauthed(
+                |headers, request_context, lambda_context| async move {
+                    let (response, response_headers) = match api
+                        .get_foo(foo_id, headers, request_context, lambda_context)
+                        .await
+                    {
+                        Ok((response, response_headers)) => (response, response_headers),
+                        Err(err) => return api.respond_to_handler_error(err).await,
+                    };
+                    log::trace!("Response: {response:#?}");
+                    log::trace!("Returning response headers: {response_headers:#?}");
+                    match response.into_http_response(response_headers) {
+                        Ok(response) => response,
+                        Err(err) => api.respond_to_event_error(err).await,
+                    }
+                },
+                "getFoo",
+                request.headers,
+                request.request_context,
+                lambda_context,
+            )
+            .await
+    }
+    async fn dispatch_request_impl<A, M>(
+        api: &A,
+        request: ApiGatewayProxyRequest,
+        lambda_context: LambdaContext,
+        middleware: &M,
+    ) -> ApiGatewayProxyResponse
+    where
+        A: Api<AuthOk = <M as Middleware>::AuthOk> + Sync,
+        M: Middleware + Sync,
+    {
+        log::trace!("Request: {request:#?}");
+        log::trace!("Lambda context: {lambda_context:#?}");
+        let operation_id = if let Some(ref operation_id) = request
+            .request_context
+            .operation_name
+        {
+            operation_id
+        } else {
+            return http_response_to_apigw(
+                api
+                    .respond_to_event_error(
+                        EventError::UnexpectedOperationId(
+                            "no operation_name provided in ApiGatewayProxyRequest"
+                                .into(),
+                            Backtrace::new(),
+                        ),
+                    )
+                    .await,
+            );
+        };
+        let http_response = match operation_id.as_str() {
+            "createFoo" => {
+                handle_create_foo(api, request, lambda_context, middleware).await
+            }
+            "getFoo" => handle_get_foo(api, request, lambda_context, middleware).await,
+            _ => {
+                api.respond_to_event_error(
+                        EventError::UnexpectedOperationId(
+                            operation_id.to_string(),
+                            Backtrace::new(),
+                        ),
+                    )
+                    .await
+            }
+        };
+        http_response_to_apigw(http_response)
+    }
+}
+

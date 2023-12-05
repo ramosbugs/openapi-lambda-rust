@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push: {}
+  pull_request: {}
+  schedule:
+    # Run daily to catch breakages in new Rust versions as well as new cargo audit findings.
+    - cron: '0 16 * * *'
+  workflow_dispatch: {}
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ${{ matrix.rust_os.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        rust_os:
+          - { rust: 1.70.0, os: ubuntu-22.04 }
+          - { rust: stable, os: ubuntu-22.04 }
+          - { rust: beta, os: ubuntu-22.04 }
+          - { rust: nightly, os: ubuntu-22.04 }
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@${{ matrix.rust_os.rust }}
+
+      # Newer dependency versions may not support rustc 1.70, so we use a Cargo.lock file for those
+      # builds along with `--locked`.
+      - name: Use Rust 1.70 lockfile
+        if: ${{ matrix.rust_os.rust == '1.70.0' }}
+        run: |
+          cp Cargo-1.70.lock Cargo.lock
+          echo "CARGO_LOCKED=--locked" >> $GITHUB_ENV
+
+      # FIXME: also run petstore integration tests
+      - name: Run tests
+        run: cargo ${CARGO_LOCKED} test
+
+  clippy-fmt:
+    name: Cargo fmt + clippy (MSRV only)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@1.70.0
+        with:
+          components: clippy, rustfmt
+
+      # Newer dependency versions may not support rustc 1.70, so we use a Cargo.lock file for those
+      # builds along with `--locked`.
+      - name: Use MSRV lockfile
+        run: cp Cargo-1.70.lock Cargo.lock
+
+      - name: Check fmt
+        run: cargo --locked fmt --all -- --check
+
+      - name: Run Clippy
+        run: cargo --locked clippy --all -- --deny warnings
+
+  audit:
+    name: Cargo Audit (stable only)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run Cargo Audit
+        run: |
+          cargo install --force cargo-audit
+          cargo --locked audit

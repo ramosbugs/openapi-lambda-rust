@@ -1,0 +1,57 @@
+---
+source: openapi-lambda-test/src/lib.rs
+expression: bar_handler_contents
+---
+#![allow(unused_imports)]
+
+use crate::bar::{Api, CreateBarResponse};
+
+use openapi_lambda::__private::anyhow;
+use openapi_lambda::__private::aws_lambda_events::encodings::Body;
+use openapi_lambda::async_trait::async_trait;
+use openapi_lambda::{
+  ApiGatewayProxyRequestContext, HeaderMap, HttpResponse, LambdaContext, StatusCode,
+};
+
+pub struct BarApiHandler {
+  // Store any handler state (e.g., DB client) here.
+  state: (),
+}
+
+impl BarApiHandler {
+  pub fn new(state: ()) -> Self {
+    Self { state }
+  }
+}
+
+#[async_trait]
+impl Api for BarApiHandler {
+  // Define a type here to represent a successfully authenticated user.
+  type AuthOk = ();
+
+  // Define an error type to capture the errors produced by your API handler methods.
+  type HandlerError = ();
+
+  // Return an error response depending on the nature of the error (e.g., 400 Bad Request for
+  // errors caused by a client sending an invalid request, or 500 Internal Server Error for
+  // internal errors such as failing to connect to a database).
+  async fn respond_to_handler_error(&self, _err: Self::HandlerError) -> HttpResponse {
+    todo!()
+  }
+
+  async fn create_bar(
+    &self,
+    bar_id: crate::types::BarId,
+    sort_by: Option<crate::models::SortBy>,
+    r#type: Option<crate::models::CreateBarTypeParam>,
+    x_bar: Option<String>,
+    request_body: Vec<u8>,
+    headers: HeaderMap,
+    request_context: ApiGatewayProxyRequestContext,
+    lambda_context: LambdaContext,
+    auth_ok: Self::AuthOk,
+  ) -> Result<(CreateBarResponse, HeaderMap), Self::HandlerError> {
+    todo!()
+  }
+}
+

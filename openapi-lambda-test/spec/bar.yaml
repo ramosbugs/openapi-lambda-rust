@@ -1,0 +1,49 @@
+# Reference targets don't need to conform to the root OpenAPI definition layout.
+path:
+  post:
+    operationId: createBar
+    parameters:
+      - name: barId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: crate::types::BarId
+      - $ref: "openapi.yaml#/components/parameters/SortBy"
+      # Identifier should be `r#type` to avoid Rust keyword.
+      - name: type
+        in: query
+        description: Bar type
+        schema:
+          type: string
+          # Inline enum should generate a new model.
+          enum:
+            - a
+            - B
+            - "1"
+            - ""
+      - name: x-bar
+        in: header
+        schema:
+          type: string
+    requestBody:
+      $ref: "baz.yaml#/requestBodies/CreateBar"
+    responses:
+      "200":
+        description: Successful operation
+        content:
+          application/json:
+            schema:
+              $ref: "openapi.yaml#/components/schemas/Foo"
+      "400":
+        description: Bad request
+        content:
+          text/plain:
+            schema:
+              type: string
+      "404":
+        description: Not found
+      default:
+        description: Default response
+    tags:
+      - bar

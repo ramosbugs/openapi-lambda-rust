@@ -1,0 +1,154 @@
+---
+source: openapi-lambda-test/src/lib.rs
+expression: openapi_apigw_contents
+---
+openapi: 3.0.2
+info:
+  title: Integration test
+  version: 0.1.0
+paths:
+  /foo:
+    post:
+      tags:
+        - foo
+      operationId: createFoo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFooJsonRequestBody"
+        required: true
+      responses:
+        "200":
+          $ref: "#/components/responses/FooOk"
+      x-amazon-apigateway-integration:
+        httpMethod: POST
+        type: aws_proxy
+        uri:
+          "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FooApiFunction.Alias}/invocations"
+  "/foo/{foo_id}":
+    get:
+      tags:
+        - foo
+      operationId: getFoo
+      parameters:
+        - in: path
+          name: foo_id
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        "200":
+          $ref: "#/components/responses/FooOk"
+      security:
+        - {}
+      x-amazon-apigateway-integration:
+        httpMethod: POST
+        type: aws_proxy
+        uri:
+          "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FooApiFunction.Alias}/invocations"
+  /bar:
+    post:
+      tags:
+        - bar
+      operationId: createBar
+      parameters:
+        - in: query
+          name: barId
+          required: true
+          schema:
+            type: integer
+            format: "crate::types::BarId"
+          style: form
+        - $ref: "#/components/parameters/SortBy"
+        - in: query
+          name: type
+          description: Bar type
+          schema:
+            $ref: "#/components/schemas/CreateBarTypeParam"
+          style: form
+        - in: header
+          name: x-bar
+          schema:
+            type: string
+          style: simple
+      requestBody:
+        content:
+          application/octet-stream: {}
+        required: true
+      responses:
+        default:
+          description: Default response
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Foo"
+        "400":
+          description: Bad request
+          content:
+            text/plain:
+              schema:
+                type: string
+        "404":
+          description: Not found
+      x-amazon-apigateway-integration:
+        httpMethod: POST
+        type: aws_proxy
+        uri:
+          "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${BarApiFunction.Alias}/invocations"
+components:
+  schemas:
+    Foo:
+      type: object
+      properties:
+        foo_id:
+          type: string
+        type:
+          type: string
+        description:
+          type: string
+      required:
+        - foo_id
+        - type
+    sort-by:
+      type: string
+      enum:
+        - name
+        - role
+        - status
+        - self
+    CreateFooJsonRequestBody:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+    CreateBarTypeParam:
+      type: string
+      enum:
+        - a
+        - B
+        - "1"
+        - ""
+  responses:
+    FooOk:
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Foo"
+  parameters:
+    SortBy:
+      in: query
+      name: sortBy
+      schema:
+        $ref: "#/components/schemas/sort-by"
+      style: form
+tags:
+  - name: foo
+  - name: bar
+
