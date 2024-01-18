@@ -38,4 +38,4 @@ openapi-lambda-codegen = { path = "../openapi-lambda-codegen" }
 # uses (see https://github.com/serde-rs/serde/pull/2588 and
 # https://github.com/matklad/macro-dep-test).
 [target.'cfg(any())'.dependencies]
-openapi-lambda-codegen = { version = "=0.1.1", path = "../openapi-lambda-codegen" }
+openapi-lambda-codegen = { version = "=0.1.2", path = "../openapi-lambda-codegen" }
