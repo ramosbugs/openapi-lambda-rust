@@ -1,4 +1,4 @@
-#![doc = include_str!("../../README.md")]
+#![doc = include_str!("../README.md")]
 #![warn(missing_docs)]
 
 use aws_lambda_events::apigw::ApiGatewayProxyResponse;

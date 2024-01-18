@@ -1,7 +1,6 @@
 [package]
 name = "openapi-lambda"
 description = "Opinionated, strongly-typed code generation for AWS Lambda from OpenAPI definitions"
-readme = "../README.md"
 
 authors.workspace = true
 edition.workspace = true
