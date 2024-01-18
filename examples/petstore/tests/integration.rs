@@ -2,7 +2,6 @@ use pretty_assertions::assert_eq;
 use reqwest::{Client, StatusCode, Url};
 use serde_json::json;
 
-// FIXME: run this in CI.
 #[tokio::test]
 // Since this test depends on the API running separately (either locally or in AWS), we only run
 // the test when specifically requested (see
@@ -85,7 +84,7 @@ async fn test_integration() {
     let response = client
       .post(base_url.join("pet").unwrap())
       .header("Authorization", "Bearer foobar")
-      .header("Content-Type", "test/plain")
+      .header("Content-Type", "text/plain")
       .body(r#"{"name": "foo", "photoUrls": []}"#)
       .send()
       .await

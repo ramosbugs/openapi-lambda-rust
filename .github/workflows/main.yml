@@ -10,6 +10,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_LOG: info
 
 jobs:
   test:
@@ -41,9 +42,78 @@ jobs:
           cp Cargo-1.70.lock Cargo.lock
           echo "CARGO_LOCKED=--locked" >> $GITHUB_ENV
 
-      # FIXME: also run petstore integration tests
       - name: Run default tests
-        run: cargo ${CARGO_LOCKED} test
+        run: cargo ${CARGO_LOCKED} test -vv
+
+  petstore-test:
+    name: Run Petstore example tests
+    runs-on: ${{ matrix.rust_os.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        rust_os:
+          - { rust: 1.70.0, os: ubuntu-22.04 }
+          - { rust: stable, os: ubuntu-22.04 }
+          - { rust: beta, os: ubuntu-22.04 }
+          - { rust: nightly, os: ubuntu-22.04 }
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust_os.rust }}
+          components: rustfmt
+
+      - name: Install AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      # The Petstore example builds for ARM64, but GitHub runners are all x86-64, so we need QEMU.
+      # See https://github.com/aws/aws-sam-cli/issues/3169#issuecomment-906729604.
+      - name: Install QEMU
+        run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+      - name: Install Zig toolchain
+        uses: korandoru/setup-zig@v1
+        with:
+          zig-version: 0.10.0
+
+      # See https://www.cargo-lambda.info/guide/getting-started.html#github-actions.
+      - name: Install Cargo Lambda
+        uses: jaxxstorm/action-install-gh-release@v1
+        with:
+          repo: cargo-lambda/cargo-lambda
+          tag: v1.0.1
+          platform: linux
+          arch: x86_64
+
+      # Newer dependency versions may not support rustc 1.70, so we use a Cargo.lock file for those
+      # builds along with `--locked`.
+      - name: Use Rust 1.70 lockfile
+        if: ${{ matrix.rust_os.rust == '1.70.0' }}
+        run: |
+          cp Cargo-1.70.lock Cargo.lock
+          echo "CARGO_LOCKED=--locked" >> $GITHUB_ENV
+
+      - name: Build Petstore example SAM template
+        working-directory: examples/petstore
+        run: sam build
+
+      # NB: Most of the logs produced here will be in the Post action!
+      - name: Start Petstore example local API
+        uses: JarvusInnovations/background-action@v1
+        with:
+          run: sam local start-api &
+          wait-on: tcp:localhost:3000
+          working-directory: examples/petstore
+          tail: true
+          log-output-if: true
+
+      - name: Run Petstore example integration tests
+        run: cargo test -p petstore -vv -- --ignored
 
   clippy-fmt:
     name: Cargo fmt + clippy (MSRV only)
@@ -62,12 +132,12 @@ jobs:
         run: cp Cargo-1.70.lock Cargo.lock
 
       - name: Run Clippy
-        run: cargo --locked clippy --all -- --deny warnings
+        run: cargo --locked clippy --all -vv -- --deny warnings
 
       # Cargo fmt doesn't run build.rs, so we need to run clippy first in order for
       # openapi-lambda-test to pass (since it depends on the .openapi-lambda output directory).
       - name: Check fmt
-        run: cargo --locked fmt --all -- --check
+        run: cargo --locked fmt --all -v -- --check
 
   audit:
     name: Cargo Audit (stable only)
