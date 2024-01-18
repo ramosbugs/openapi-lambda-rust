@@ -28,7 +28,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@${{ matrix.rust_os.rust }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust_os.rust }}
+          components: rustfmt
 
       # Newer dependency versions may not support rustc 1.70, so we use a Cargo.lock file for those
       # builds along with `--locked`.
@@ -39,7 +42,7 @@ jobs:
           echo "CARGO_LOCKED=--locked" >> $GITHUB_ENV
 
       # FIXME: also run petstore integration tests
-      - name: Run tests
+      - name: Run default tests
         run: cargo ${CARGO_LOCKED} test
 
   clippy-fmt:
@@ -58,11 +61,13 @@ jobs:
       - name: Use MSRV lockfile
         run: cp Cargo-1.70.lock Cargo.lock
 
-      - name: Check fmt
-        run: cargo --locked fmt --all -- --check
-
       - name: Run Clippy
         run: cargo --locked clippy --all -- --deny warnings
+
+      # Cargo fmt doesn't run build.rs, so we need to run clippy first in order for
+      # openapi-lambda-test to pass (since it depends on the .openapi-lambda output directory).
+      - name: Check fmt
+        run: cargo --locked fmt --all -- --check
 
   audit:
     name: Cargo Audit (stable only)
