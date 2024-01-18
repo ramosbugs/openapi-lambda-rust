@@ -136,7 +136,14 @@ impl EventError {
   }
 }
 
+// For convenience.
 impl From<EventError> for HttpResponse {
+  fn from(err: EventError) -> HttpResponse {
+    (&err).into()
+  }
+}
+
+impl From<&EventError> for HttpResponse {
   /// Build a client-facing [`HttpResponse`] appropriate for the error that occurred.
   ///
   /// This function will set the appropriate HTTP status code (400 or 500) depending on whether the
@@ -144,7 +151,7 @@ impl From<EventError> for HttpResponse {
   /// response body contains a human-readable description of the error and the `Content-Type`
   /// response header is set to `text/plain`. For internal errors, no response body is returned to
   /// the client.
-  fn from(err: EventError) -> HttpResponse {
+  fn from(err: &EventError) -> HttpResponse {
     let (status_code, body) = match err {
       // 400
       EventError::InvalidBodyJson(err, _) => (
