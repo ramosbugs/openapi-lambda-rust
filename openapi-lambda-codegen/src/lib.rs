@@ -1,10 +1,6 @@
+#![doc = include_str!("../README.md")]
 #![allow(clippy::too_many_arguments)]
 #![warn(missing_docs)]
-
-//! Code generator for [`openapi-lambda`](https://docs.rs/openapi-lambda) crate.
-//!
-//! Please refer to the [`openapi-lambda`](https://docs.rs/openapi-lambda) crate documentation for
-//! usage information.
 
 use crate::api::operation::collect_operations;
 
